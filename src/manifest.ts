@@ -4,7 +4,7 @@ import { version, description } from "../package.json";
 
 const manifest: Manifest = {
   id: `com.aliyss.${ADDON_ID}`,
-  name: "SIMKL",
+  name: "TRAKT-IMPORT",
   version,
   description,
   logo: "https://avatars.githubusercontent.com/u/9755912?s=200&v=4",

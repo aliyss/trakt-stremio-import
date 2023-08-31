@@ -1,0 +1,93 @@
+* Table of Contents                                                     :toc:
+- [[#why][Why?]]
+- [[#warning][WARNING]]
+- [[#info][Info]]
+  - [[#todo][ToDo]]
+- [[#modify-and-build-yourself][Modify and Build yourself]]
+- [[#what-else][What else?]]
+
+* Why?
+I am using this, because I practically have nothing on trakt and a ton on stremio. Stremio trakt scrobbling works perfectly. But it does not add your old stuff to trakt. So this is a small bridge.
+
+* WARNING
+Use this if you don't mind changes to your trakt. I have not tested everything. It works for me currently. It just syncs the stremio history into trakt which may not work as expected, because of what I need in the "Help" Section.
+
+There are also issues with importing date watched currently for shows. I think movies work fine.
+So still working on that.
+
+* Info
+Allows for a One-Way Sync from Trakt to Simkl.
+
+*** Help
+If you want to help, I have two things I need to figure out:
+
+**** How to manage small diffs
+I only want to sync necessary stuff, so a mapping would be nice like:
+
+#+begin_src typescript
+  if (trakt.last_watched_at > stremio.state.lastWatched) {
+    return false
+  }
+#+end_src
+
+**** How to manage mapping
+I want to map the info as correctly as possible, so a mapping would look like:
+
+#+begin_src typescript
+  if (stremio.state.flaggedAsWatched) {
+    trakt.collection = "completed"
+  }
+#+end_src
+
+*** Warning
+Some Syncing may not work as expected. I really tried to manage it as well as possible. It works for me, but I really can't take any responsibility.
+
+There are some checks in place for backfilling:
+- List Update: Ignored if Trakt already marked as complete
+- Watch History Update (Movie): Ignored if Trakt already marked as complete
+- Watch History Update (Show): Ignored if Trakt lastWatched is greater than Stremio
+
+I plan on adding more checks to limit and only process necessary items:
+- If you have any more checks to recommend feel free to open an issue.
+
+** ToDo
+- [X] Only sync actual diffs
+- [X] Sync Lists from Stremio to Trakt
+- [X] Sync History from Stremio to Trakt
+
+
+* Modify and Build yourself
+
+*** Build
+
+#+begin_src bash
+  npm install
+  npm run build
+#+end_src
+
+*** Start
+Start the program. Then go to http://localhost:7000/configure
+#+begin_src bash
+  npm run start
+#+end_src
+
+*** Getting the Client Id from Trakt
+ 1. GoTo: [[https://trakt.tv/oauth/applications/new]]
+ 2. Create an app
+ 3. Redirect URI: [[https://trakt.tv/activate]]
+ 4. Cors: http://localhost:7000
+
+*** Cors Error
+Probably it won't work on localhost. Just install a cors browser addon to fix your issues.
+I might push it to beamup if the stremio devs say it's ok. Since it isn't really an addon, more of a help to backwards import everything.
+
+*** Sync
+The syncing will start the moment you finish configuring. You can check the console
+If it still fails open an issue with some details so I can check it out.
+
+* What else?
+There is a lot of unnecessary code. Like a ton of stremio code, that isn't needed. I just didn't clean up yet.
+
+It's currently a proof of concept. Depending on how much interest there is, I'll clean it up and not just have it workable.
+
+Any pull requests are of course welcome.

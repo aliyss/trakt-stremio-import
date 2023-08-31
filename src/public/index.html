@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Aliyss Stremio Trakt Sync</title>
+  </head>
+  <body>
+    <h1>Settings</h1>
+    <div id="stremio_credentials">
+      <p>
+        Open Link:
+        <a id="stremio_link" href="" target="_blank"> Getting Link... </a>
+      </p>
+      <div style="display: none">
+        <label for="stremio_pin">Stremio Code</label><br />
+        <input id="stremio_pin" value="" />
+      </div>
+      <p id="stremio_credentials_error" style="color: red"></p>
+      After you are done come back and click this
+      <input id="stremio_verify" type="submit" value="Submit" />
+    </div>
+    <form id="trakt_auth" style="display: none">
+      <label for="clientid">Trakt Client Id</label><br />
+      <input type="text" id="clientid" name="clientid" value="" /><br />
+      <label for="clientsecret">Trakt Client Secret</label><br />
+      <input
+        type="text"
+        id="clientsecret"
+        name="clientsercret"
+        value=""
+      /><br />
+      <p id="trakt_auth_error" style="color: red"></p>
+      <br />
+      <input type="submit" value="Submit" />
+    </form>
+    <div id="trakt_auth_confirm" style="display: none">
+      <p>Open Link: <a id="trakt_link" target="_blank"></a></p>
+      <label for="trakt_pin">Trakt Code (Copy this)</label><br />
+      <input id="trakt_pin" value="" />
+      <p id="trakt_log" style="color: yellow"></p>
+      After you are done come back and click this
+      <input id="trakt_verify" type="submit" value="Submit" />
+    </div>
+    <form
+      id="send_to_server"
+      action="/configure/submit"
+      method="POST"
+      style="display: none"
+    >
+      <label for="stremio_authkey">Stremio AuthKey:</label><br />
+      <input
+        type="text"
+        id="stremio_authkey"
+        name="stremio_authkey"
+        value=""
+      /><br />
+      <label for="trakt_clientid">Trakt Client Id:</label><br />
+      <input
+        type="text"
+        id="trakt_clientid"
+        name="trakt_clientid"
+        value=""
+      /><br />
+      <label for="trakt_accesstoken">Trakt AccessToken:</label><br />
+      <input
+        type="text"
+        id="trakt_accesstoken"
+        name="trakt_accesstoken"
+        value=""
+      /><br /><br />
+      <input type="submit" value="Submit" />
+    </form>
+    <script lang="javascript">
+      const formStremioCredentials = document.getElementById(
+        "stremio_credentials",
+      );
+      const stremio_link = document.getElementById("stremio_link");
+      const stremio_pin = document.getElementById("stremio_pin");
+      const stremio_verify = document.getElementById("stremio_verify");
+
+      let stremio_credentials_error = document.getElementById(
+        "stremio_credentials_error",
+      );
+
+      let stremio_authkeyInput = document.getElementById("stremio_authkey");
+      let trakt_accesstokenInput = document.getElementById("trakt_accesstoken");
+      let trakt_clientidInput = document.getElementById("trakt_clientid");
+
+      const formTraktAuth = document.getElementById("trakt_auth");
+      let trakt_auth_error = document.getElementById("trakt_auth_error");
+
+      const divTraktAuthConfirm = document.getElementById("trakt_auth_confirm");
+      let trakt_link = document.getElementById("trakt_link");
+      let trakt_pin = document.getElementById("trakt_pin");
+      let trakt_log = document.getElementById("trakt_log");
+      let trakt_verify = document.getElementById("trakt_verify");
+
+      const formSendToServer = document.getElementById("send_to_server");
+
+      fetch(`https://link.stremio.com/api/create?type=Create`, {
+        method: "GET",
+        mode: "cors",
+        cache: "no-cache",
+        referrerPolicy: "no-referrer",
+      })
+        .then((response) =>
+          response
+            .json()
+            .then((value) => {
+              if (value.result) {
+                stremio_pin.value = value.result.code;
+                stremio_link.innerHTML = value.result.link;
+                stremio_link.href = value.result.link;
+              } else {
+                stremio_credentials_error.innerHTML = JSON.stringify(
+                  value.error,
+                );
+              }
+            })
+            .catch((error) => {
+              stremio_credentials_error.innerHTML = JSON.stringify(error);
+            }),
+        )
+        .catch((error) => {
+          stremio_credentials_error.innerHTML = JSON.stringify(error);
+        });
+
+      stremio_verify.addEventListener("click", function (e) {
+        e.preventDefault();
+
+        fetch(
+          `https://link.stremio.com/api/read?type=Read&code=${stremio_pin.value}`,
+          {
+            method: "GET",
+            mode: "cors",
+            cache: "no-cache",
+            credentials: "same-origin",
+            redirect: "follow",
+            referrerPolicy: "no-referrer",
+          },
+        )
+          .then((response) =>
+            response
+              .json()
+              .then((value) => {
+                if (value.result) {
+                  stremio_authkeyInput.value =
+                    value.result.authKey || value.result.auth_key;
+                  formStremioCredentials.style.display = "none";
+                  formTraktAuth.style.display = "";
+                } else {
+                  stremio_credentials_error.innerHTML = JSON.stringify(
+                    value.error,
+                  );
+                }
+              })
+              .catch((error) => {
+                stremio_credentials_error.innerHTML = JSON.stringify(error);
+              }),
+          )
+          .catch((error) => {
+            stremio_credentials_error.innerHTML = JSON.stringify(error);
+          });
+      });
+
+      var code = {};
+
+      formTraktAuth.addEventListener("submit", function (e) {
+        e.preventDefault();
+        const formData = new FormData(formTraktAuth);
+
+        let authObject = {};
+
+        formData.forEach(function (value, key) {
+          authObject[key] = value;
+        });
+
+        code.clientid = authObject.clientid;
+        code.clientsecret = authObject.clientsecret;
+
+        fetch(`https://api.trakt.tv/oauth/device/code`, {
+          method: "POST",
+          body: JSON.stringify({ client_id: code.clientid }),
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+        })
+          .then((response) =>
+            response
+              .json()
+              .then((value) => {
+                console.log(value);
+                if (value.user_code) {
+                  code.device_code = value.device_code;
+                  trakt_pin.value = value.user_code;
+                  trakt_link.innerHTML = value.verification_url;
+                  trakt_link.href = value.verification_url;
+                  formTraktAuth.style.display = "none";
+                  divTraktAuthConfirm.style.display = "";
+                } else {
+                  trakt_auth_error.innerHTML = JSON.stringify(value.error);
+                }
+              })
+              .catch((error) => {
+                trakt_auth_error.innerHTML = JSON.stringify(error);
+              }),
+          )
+          .catch((error) => {
+            console.log(error);
+            trakt_auth_error.innerHTML = JSON.stringify(error);
+          });
+      });
+
+      trakt_verify.addEventListener("click", function (e) {
+        e.preventDefault();
+
+        fetch(`https://api.trakt.tv/oauth/device/token`, {
+          method: "POST",
+          body: JSON.stringify({
+            code: code.device_code,
+            client_id: code.clientid,
+            client_secret: code.clientsecret,
+          }),
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+        })
+          .then((response) =>
+            response
+              .json()
+              .then((value) => {
+                if (value) {
+                  trakt_accesstokenInput.value = value.access_token;
+                  trakt_clientidInput.value = code.clientid;
+                  divTraktAuthConfirm.style.display = "none";
+                  formSendToServer.style.display = "";
+                } else {
+                  trakt_auth_error.innerHTML = JSON.stringify(value);
+                }
+              })
+              .catch((error) => {
+                trakt_auth_error.innerHTML = JSON.stringify(error);
+              }),
+          )
+          .catch((error) => {
+            trakt_auth_error.innerHTML = JSON.stringify(error);
+          });
+      });
+    </script>
+  </body>
+</html>

@@ -16,7 +16,7 @@ There are also issues with importing date watched currently for shows. I think m
 So still working on that.
 
 * Info
-Allows for a One-Way Sync from Trakt to Simkl.
+Allows for a One-Way Sync from Stremio to Trakt.
 
 *** Help
 If you want to help, I have two things I need to figure out:
